@@ -3,10 +3,9 @@
 # ========================================
 FROM node:22-alpine AS build
 
-# Set the working directory
 WORKDIR /app
 
-# Copy package.json and yarn.lock
+# Copy package files
 COPY package.json yarn.lock ./
 
 # Install dependencies
@@ -20,9 +19,9 @@ COPY tsconfig.json ./
 RUN yarn build
 
 # ========================================
-# Stage 2: Dependencies Stage
+# Stage 2: Production Stage
 # ========================================
-FROM node:22-alpine AS deps
+FROM node:22-alpine AS production
 
 WORKDIR /app
 
@@ -33,21 +32,16 @@ COPY package.json yarn.lock ./
 RUN yarn install --frozen-lockfile --production --silent && \
     yarn cache clean
 
-# ========================================
-# Stage 3: Production Stage (Distroless)
-# ========================================
-FROM gcr.io/distroless/nodejs22-debian12 AS production
-
-WORKDIR /app
-
-# Copy built app from build stage
+# Copy built application
 COPY --from=build /app/dist ./dist
 
-# Copy production node_modules from deps stage
-COPY --from=deps /app/node_modules ./node_modules
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodeapp -u 1001
 
-# Copy package.json
-COPY --from=build /app/package.json ./
+# Change ownership and switch to non-root user
+RUN chown -R nodeapp:nodejs /app
+USER nodeapp
 
 EXPOSE 3000
-CMD ["dist/index.js"]
+CMD ["node", "dist/index.js"]
