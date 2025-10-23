@@ -1,0 +1,523 @@
+/* Facebook-style Dashboard CSS */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.facebook-container {
+  min-height: 100vh;
+  background-color: #f0f2f5;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Header Navigation */
+.facebook-header {
+  background: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  height: 56px;
+}
+
+.header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 16px;
+  height: 100%;
+}
+
+.logo {
+  color: #1877f2;
+  font-size: 24px;
+  font-weight: bold;
+  margin: 0;
+}
+
+.user-menu {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-name {
+  font-weight: 600;
+  color: #050505;
+}
+
+.logout-btn {
+  background: #42b883;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.logout-btn:hover {
+  background: #369870;
+}
+
+/* Profile Content */
+.profile-content {
+  margin-top: 56px;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Cover Photo Section */
+.cover-section {
+  background: white;
+  border-radius: 0 0 8px 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.cover-photo {
+  height: 348px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  position: relative;
+}
+
+.cover-gradient {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.3) 100%);
+}
+
+.profile-info-section {
+  padding: 16px 32px 24px;
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  position: relative;
+}
+
+/* Profile Avatar */
+.profile-avatar {
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: white;
+  background: linear-gradient(135deg, #1877f2 0%, #42b883 100%);
+  border: 4px solid white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.profile-avatar.small {
+  width: 40px;
+  height: 40px;
+  font-size: 14px;
+}
+
+.profile-avatar.large {
+  width: 168px;
+  height: 168px;
+  font-size: 48px;
+  margin-top: -84px;
+}
+
+.profile-details {
+  flex: 1;
+  margin-top: 16px;
+}
+
+.profile-name {
+  font-size: 32px;
+  font-weight: bold;
+  color: #050505;
+  margin: 0 0 8px 0;
+}
+
+.profile-email {
+  color: #65676b;
+  font-size: 15px;
+  margin: 0 0 4px 0;
+}
+
+.member-since {
+  color: #65676b;
+  font-size: 15px;
+  margin: 0;
+}
+
+.profile-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.action-btn {
+  padding: 9px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+
+.action-btn.primary {
+  background: #1877f2;
+  color: white;
+}
+
+.action-btn.primary:hover {
+  background: #166fe5;
+}
+
+.action-btn.secondary {
+  background: #e4e6ea;
+  color: #050505;
+}
+
+.action-btn.secondary:hover {
+  background: #d8dadf;
+}
+
+/* Navigation Tabs */
+.profile-nav {
+  background: white;
+  border-top: 1px solid #dadde1;
+  padding: 0 32px;
+}
+
+.nav-tabs {
+  display: flex;
+  gap: 32px;
+}
+
+.nav-tab {
+  background: none;
+  border: none;
+  padding: 16px 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #65676b;
+  cursor: pointer;
+  border-bottom: 4px solid transparent;
+  transition: all 0.2s;
+}
+
+.nav-tab:hover {
+  background: #f2f3f5;
+  border-radius: 8px 8px 0 0;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+.nav-tab.active {
+  color: #1877f2;
+  border-bottom-color: #1877f2;
+}
+
+/* Main Content */
+.main-content {
+  display: grid;
+  grid-template-columns: 360px 1fr 360px;
+  gap: 16px;
+  padding: 16px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Info Cards */
+.info-card {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 16px;
+}
+
+.info-card h3 {
+  font-size: 20px;
+  font-weight: bold;
+  color: #050505;
+  margin-bottom: 16px;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  color: #050505;
+}
+
+.info-icon {
+  font-size: 16px;
+  width: 20px;
+}
+
+/* Friends Grid */
+.friends-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.friend-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 8px;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+}
+
+.friend-item:hover {
+  background: #f2f3f5;
+}
+
+.friend-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1877f2 0%, #42b883 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  margin-bottom: 8px;
+  position: relative;
+}
+
+.friend-avatar.online::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 16px;
+  height: 16px;
+  background: #42b883;
+  border: 3px solid white;
+  border-radius: 50%;
+}
+
+.friend-item span {
+  font-size: 13px;
+  font-weight: 600;
+  color: #050505;
+}
+
+/* Create Post Card */
+.create-post-card {
+  background: white;
+  border-radius: 8px;
+  padding: 12px 16px 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 16px;
+}
+
+.create-post-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.post-input {
+  flex: 1;
+  background: #f0f2f5;
+  border: none;
+  border-radius: 50px;
+  padding: 12px 16px;
+  font-size: 16px;
+  color: #050505;
+}
+
+.post-input::placeholder {
+  color: #65676b;
+}
+
+.create-post-actions {
+  display: flex;
+  justify-content: space-around;
+  border-top: 1px solid #dadde1;
+  padding-top: 8px;
+}
+
+.post-action {
+  background: none;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  color: #65676b;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.post-action:hover {
+  background: #f2f3f5;
+}
+
+/* Post Cards */
+.post-card {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.post-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+}
+
+.post-info h4 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #050505;
+  margin: 0;
+}
+
+.post-time {
+  font-size: 13px;
+  color: #65676b;
+  margin: 0;
+}
+
+.post-content {
+  padding: 0 16px 16px;
+}
+
+.post-content p {
+  color: #050505;
+  font-size: 15px;
+  line-height: 1.33;
+  margin: 0;
+}
+
+.post-actions {
+  border-top: 1px solid #dadde1;
+  display: flex;
+  justify-content: space-around;
+}
+
+.post-action-btn {
+  background: none;
+  border: none;
+  padding: 8px 16px;
+  color: #65676b;
+  font-weight: 600;
+  cursor: pointer;
+  flex: 1;
+  transition: background-color 0.2s;
+}
+
+.post-action-btn:hover {
+  background: #f2f3f5;
+}
+
+/* Activity Items */
+.activity-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.activity-icon {
+  font-size: 16px;
+  margin-top: 2px;
+}
+
+.activity-content p {
+  font-size: 14px;
+  color: #050505;
+  margin: 0 0 2px 0;
+}
+
+.activity-content small {
+  font-size: 12px;
+  color: #65676b;
+}
+
+/* Online Friends */
+.online-friend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.online-friend span {
+  font-size: 14px;
+  color: #050505;
+}
+
+/* Loading State */
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  font-size: 18px;
+  color: #65676b;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .main-content {
+    grid-template-columns: 1fr;
+    max-width: 680px;
+  }
+  
+  .content-left,
+  .content-right {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .header-content {
+    padding: 0 8px;
+  }
+  
+  .profile-info-section {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 16px;
+  }
+  
+  .profile-avatar.large {
+    margin-top: -84px;
+  }
+  
+  .profile-details {
+    margin-top: 16px;
+  }
+  
+  .profile-nav {
+    padding: 0 16px;
+  }
+  
+  .nav-tabs {
+    gap: 16px;
+  }
+  
+  .main-content {
+    padding: 8px;
+  }
+}

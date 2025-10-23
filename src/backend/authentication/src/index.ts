@@ -34,6 +34,12 @@ app.get('/health', (req, res) => {
 // Error handling middleware
 app.use(errorHandler);
 
+// cors 
+app.use(cors({
+    origin: ['http://localhost:9090'],
+    credentials: true
+}));
+
 // Start the server
 app.listen(PORT, () => {
     console.log(`Authentication service is running on port ${PORT}`);
