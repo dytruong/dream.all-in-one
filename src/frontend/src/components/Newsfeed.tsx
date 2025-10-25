@@ -403,7 +403,7 @@ const Newsfeed: React.FC = () => {
         if (postItem instanceof HTMLElement) {
           postItem.style.transform = 'translateY(0)';
         }
-      }, 600); // Tăng từ 400ms lên 600ms để match với animation duration mới
+      }, 400); // Reduced from 600ms to 400ms to match the faster 0.35s animation
 
       return () => clearTimeout(timer);
     }
@@ -439,7 +439,10 @@ const Newsfeed: React.FC = () => {
       <div className="feed-wrapper">
         <div className="mobile-feed">
           {currentPost && (
-            <div className={`post-item ${scrollDirection ? `slide-${scrollDirection}` : ''}`} style={{ transform: `translateY(${dragOffset}px) scale(${1 - dragProgress * 0.1})` }}>
+            <div 
+              className={`post-item ${scrollDirection ? `slide-${scrollDirection}` : ''} ${isDragging ? 'dragging' : ''}`} 
+              style={{ transform: `translateY(${dragOffset}px) scale(${1 - dragProgress * 0.1})` }}
+            >
               {/* Post Content - Text Focused */}
               <div className="post-content-center">
                 {/* Post Text - Main Focus */}
