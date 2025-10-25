@@ -9,9 +9,19 @@ interface User {
   updatedAt: string;
 }
 
+interface ChatMessage {
+  id: string;
+  user: string;
+  message: string;
+  timestamp: Date;
+  isOwn: boolean;
+}
+
 const Dashboard: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState('posts');
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [newMessage, setNewMessage] = useState('');
 
   useEffect(() => {
     // Get user data from localStorage
@@ -19,6 +29,25 @@ const Dashboard: React.FC = () => {
     if (userData) {
       setUser(JSON.parse(userData));
     }
+
+    // Initialize with some sample chat messages
+    const sampleMessages: ChatMessage[] = [
+      {
+        id: '1',
+        user: 'John Smith',
+        message: 'Hey! Welcome to Dream Social! 👋',
+        timestamp: new Date(Date.now() - 10 * 60 * 1000), // 10 minutes ago
+        isOwn: false
+      },
+      {
+        id: '2',
+        user: 'Mary Johnson',
+        message: 'Thanks for joining our community!',
+        timestamp: new Date(Date.now() - 5 * 60 * 1000), // 5 minutes ago
+        isOwn: false
+      }
+    ];
+    setChatMessages(sampleMessages);
   }, []);
 
   const handleLogout = () => {
@@ -32,6 +61,54 @@ const Dashboard: React.FC = () => {
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+  };
+
+  const handleSendMessage = () => {
+    if (!newMessage.trim() || !user) return;
+
+    const message: ChatMessage = {
+      id: Date.now().toString(),
+      user: user.name,
+      message: newMessage,
+      timestamp: new Date(),
+      isOwn: true
+    };
+
+    setChatMessages(prev => [...prev, message]);
+    setNewMessage('');
+
+    // Simulate receiving a response (for demo purposes)
+    setTimeout(() => {
+      const responses = [
+        "That's awesome! 🎉",
+        "Thanks for sharing!",
+        "Great to hear from you!",
+        "Interesting! Tell me more.",
+        "Nice! 👍"
+      ];
+      
+      const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+      const responseMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        user: 'Community Bot',
+        message: randomResponse,
+        timestamp: new Date(),
+        isOwn: false
+      };
+      
+      setChatMessages(prev => [...prev, responseMessage]);
+    }, 1000);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
+  const formatTime = (timestamp: Date) => {
+    return timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
   if (!user) {
@@ -226,44 +303,46 @@ const Dashboard: React.FC = () => {
           </div>
 
           <div className="content-right">
-            {/* Activity Log */}
-            <div className="info-card">
-              <h3>Recent Activity</h3>
-              <div className="activity-item">
-                <span className="activity-icon">🔐</span>
-                <div className="activity-content">
-                  <p>Logged in successfully</p>
-                  <small>Just now</small>
+            {/* Compact Chat Widget */}
+            <div className="chat-widget">
+              <div className="chat-widget-header">
+                <h4>💬 Chat</h4>
+                <div className="online-indicator">
+                  <span className="status-dot online"></span>
+                  <span>3</span>
                 </div>
               </div>
-              <div className="activity-item">
-                <span className="activity-icon">👤</span>
-                <div className="activity-content">
-                  <p>Profile accessed</p>
-                  <small>5 minutes ago</small>
-                </div>
+              
+              <div className="chat-widget-messages">
+                {chatMessages.slice(-3).map((msg) => (
+                  <div 
+                    key={msg.id} 
+                    className={`chat-widget-message ${msg.isOwn ? 'own' : 'other'}`}
+                  >
+                    <div className="widget-message-content">
+                      <strong>{msg.user.split(' ')[0]}:</strong> {msg.message}
+                    </div>
+                    <div className="widget-message-time">{formatTime(msg.timestamp)}</div>
+                  </div>
+                ))}
               </div>
-              <div className="activity-item">
-                <span className="activity-icon">✅</span>
-                <div className="activity-content">
-                  <p>Account verified</p>
-                  <small>1 hour ago</small>
-                </div>
-              </div>
-            </div>
-
-            {/* Online Friends */}
-            <div className="info-card">
-              <h3>Online Friends</h3>
-              <div className="online-friends">
-                <div className="online-friend">
-                  <div className="friend-avatar online">JS</div>
-                  <span>John Smith</span>
-                </div>
-                <div className="online-friend">
-                  <div className="friend-avatar online">MJ</div>
-                  <span>Mary Johnson</span>
-                </div>
+              
+              <div className="chat-widget-input">
+                <input
+                  type="text"
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Type message..."
+                  className="widget-chat-input"
+                />
+                <button 
+                  onClick={handleSendMessage}
+                  className="widget-send-btn"
+                  disabled={!newMessage.trim()}
+                >
+                  →
+                </button>
               </div>
             </div>
           </div>
