@@ -28,6 +28,9 @@ const Newsfeed: React.FC = () => {
   const [currentPostIndex, setCurrentPostIndex] = useState(0);
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   const [scrollDirection, setScrollDirection] = useState<'up' | 'down' | null>(null);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragProgress, setDragProgress] = useState(0); // 0 to 1, indicates drag strength
 
   useEffect(() => {
     // Get user data from localStorage
@@ -133,65 +136,124 @@ const Newsfeed: React.FC = () => {
     };
   }, [currentPostIndex, posts.length]);
 
-  // Add touch swipe handler for mobile devices with improved sensitivity
+  // TikTok-style touch handler with real-time visual feedback
   useEffect(() => {
     let touchStartY = 0;
-    let touchEndY = 0;
-    let isSwiping = false;
+    let touchStartTime = 0;
+    let currentTouchY = 0;
+    let animationFrameId: number | null = null;
     
     const handleTouchStart = (e: Event) => {
       const touchEvent = e as TouchEvent;
       touchStartY = touchEvent.touches[0].clientY;
-      touchEndY = touchStartY;
-      isSwiping = true;
+      currentTouchY = touchStartY;
+      touchStartTime = Date.now();
+      setIsDragging(true);
     };
     
     const handleTouchMove = (e: Event) => {
-      if (!isSwiping) return;
       const touchEvent = e as TouchEvent;
-      touchEndY = touchEvent.touches[0].clientY;
+      currentTouchY = touchEvent.touches[0].clientY;
+      const deltaY = currentTouchY - touchStartY;
       
-      // Calculate swipe distance
-      const swipeDistance = touchStartY - touchEndY;
+      // CRITICAL: Always prevent default to stop pull-to-refresh
+      // Especially when scrolling down (deltaY > 0) on any post
+      if (deltaY > 0) {
+        e.preventDefault();
+      }
       
-      // Optional: Add visual feedback while swiping
-      // You can add a transform or opacity effect here if needed
+      // Also prevent when at boundaries
+      if ((currentPostIndex === 0 && deltaY > 0) || 
+          (currentPostIndex === posts.length - 1 && deltaY < 0)) {
+        e.preventDefault();
+      }
+      
+      // Apply rubber band effect at boundaries
+      let adjustedDelta = deltaY;
+      const rubberBandStrength = 0.4;
+      
+      if ((currentPostIndex === 0 && deltaY > 0) || 
+          (currentPostIndex === posts.length - 1 && deltaY < 0)) {
+        adjustedDelta = deltaY * rubberBandStrength;
+      }
+      
+      // Update drag offset for real-time feedback
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+      
+      animationFrameId = requestAnimationFrame(() => {
+        setDragOffset(adjustedDelta);
+        setDragProgress(Math.min(Math.abs(adjustedDelta) / window.innerHeight, 1));
+        
+        // Add visual indicators for drag direction
+        const mobileFeed = document.querySelector('.mobile-feed');
+        if (mobileFeed) {
+          mobileFeed.classList.remove('dragging-up', 'dragging-down');
+          if (deltaY < -20) {
+            mobileFeed.classList.add('dragging-down');
+          } else if (deltaY > 20) {
+            mobileFeed.classList.add('dragging-up');
+          }
+        }
+      });
     };
     
     const handleTouchEnd = () => {
-      if (!isSwiping) return;
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
       
-      const swipeDistance = touchStartY - touchEndY;
-      const minSwipeDistance = 80; // Increased from 50 to 80 - người dùng phải kéo dài hơn
+      const deltaY = currentTouchY - touchStartY;
+      const touchDuration = Date.now() - touchStartTime;
+      const velocity = Math.abs(deltaY) / touchDuration;
       
-      // Only trigger scroll if swipe distance is significant
-      if (Math.abs(swipeDistance) > minSwipeDistance) {
-        if (swipeDistance > 0) {
-          // Swiped up - go to next post
+      // Calculate threshold based on velocity and distance
+      const minSwipeDistance = 50;
+      const velocityThreshold = 0.3;
+      
+      const shouldScroll = Math.abs(deltaY) > minSwipeDistance || velocity > velocityThreshold;
+      
+      if (shouldScroll) {
+        if (deltaY < 0 && currentPostIndex < posts.length - 1) {
           handleScroll('down');
-        } else {
-          // Swiped down - go to previous post
+        } else if (deltaY > 0 && currentPostIndex > 0) {
           handleScroll('up');
         }
       }
       
-      // Reset state
-      touchStartY = 0;
-      touchEndY = 0;
-      isSwiping = false;
+      // Reset drag state with smooth snap-back animation
+      setIsDragging(false);
+      setDragOffset(0);
+      setDragProgress(0);
+      
+      // Remove drag indicators
+      const mobileFeed = document.querySelector('.mobile-feed');
+      if (mobileFeed) {
+        mobileFeed.classList.remove('dragging-up', 'dragging-down');
+      }
     };
     
     const handleTouchCancel = () => {
-      // Reset if touch is cancelled
-      touchStartY = 0;
-      touchEndY = 0;
-      isSwiping = false;
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+      setIsDragging(false);
+      setDragOffset(0);
+      setDragProgress(0);
+      
+      // Remove drag indicators
+      const mobileFeed = document.querySelector('.mobile-feed');
+      if (mobileFeed) {
+        mobileFeed.classList.remove('dragging-up', 'dragging-down');
+      }
     };
 
     const container = document.querySelector('.mobile-feed');
     if (container) {
-      container.addEventListener('touchstart', handleTouchStart, { passive: true });
-      container.addEventListener('touchmove', handleTouchMove, { passive: true });
+      // Use passive: false to allow preventDefault()
+      container.addEventListener('touchstart', handleTouchStart, { passive: false });
+      container.addEventListener('touchmove', handleTouchMove, { passive: false });
       container.addEventListener('touchend', handleTouchEnd, { passive: true });
       container.addEventListener('touchcancel', handleTouchCancel, { passive: true });
     }
@@ -202,6 +264,9 @@ const Newsfeed: React.FC = () => {
         container.removeEventListener('touchmove', handleTouchMove);
         container.removeEventListener('touchend', handleTouchEnd);
         container.removeEventListener('touchcancel', handleTouchCancel);
+      }
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
       }
     };
   }, [currentPostIndex, posts.length]);
@@ -374,7 +439,7 @@ const Newsfeed: React.FC = () => {
       <div className="feed-wrapper">
         <div className="mobile-feed">
           {currentPost && (
-            <div className={`post-item ${scrollDirection ? `slide-${scrollDirection}` : ''}`}>
+            <div className={`post-item ${scrollDirection ? `slide-${scrollDirection}` : ''}`} style={{ transform: `translateY(${dragOffset}px) scale(${1 - dragProgress * 0.1})` }}>
               {/* Post Content - Text Focused */}
               <div className="post-content-center">
                 {/* Post Text - Main Focus */}

@@ -11,6 +11,8 @@
   overflow: hidden;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   transition: background-color 0.3s ease, color 0.3s ease;
+  overscroll-behavior: none; /* Prevent pull-to-refresh at browser level */
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Theme Colors */
@@ -136,49 +138,108 @@
   height: calc(100vh - 60px);
   position: relative;
   overflow: hidden; /* Keep content within bounds */
+  /* Add gradient overlay to show scroll direction */
+}
+
+.mobile-feed::before,
+.mobile-feed::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 80px;
+  pointer-events: none;
+  z-index: 5;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.mobile-feed::before {
+  top: 0;
+  background: linear-gradient(to bottom, rgba(100, 100, 255, 0.15) 0%, transparent 100%);
+}
+
+.mobile-feed::after {
+  bottom: 0;
+  background: linear-gradient(to top, rgba(100, 100, 255, 0.15) 0%, transparent 100%);
+}
+
+/* Show gradient when dragging in that direction */
+.mobile-feed.dragging-up::before {
+  opacity: 1;
+}
+
+.mobile-feed.dragging-down::after {
+  opacity: 1;
 }
 
 /* Post Item */
 .post-item {
   width: 100%;
   height: 100%;
-  position: absolute; /* Changed from relative to absolute */
-  top: 0; /* Anchor to top */
-  left: 0; /* Anchor to left */
+  position: absolute;
+  top: 0;
+  left: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.3s ease, filter 0.3s ease;
+  will-change: transform, opacity, filter;
+  /* Add shadow for depth perception */
+  filter: drop-shadow(0 10px 30px rgba(100, 120, 255, 0));
+}
+
+/* Remove transition when dragging for immediate feedback */
+.post-item[style*="translateY"] {
+  transition: none;
+}
+
+/* Enhanced visual feedback during drag */
+.post-item.dragging {
+  filter: drop-shadow(0 20px 40px rgba(100, 120, 255, 0.3));
 }
 
 /* Animation khi scroll up - bài mới từ trên xuống - TikTok style */
 .post-item.slide-up {
-  animation: slideUpAnimation 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; /* Tăng từ 0.4s lên 0.6s, easing mượt hơn */
+  animation: slideUpAnimation 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  filter: drop-shadow(0 15px 35px rgba(100, 120, 255, 0.4));
 }
 
 @keyframes slideUpAnimation {
   0% {
-    transform: translateY(-100%);
+    transform: translateY(-100%) scale(0.9);
     opacity: 0;
+    filter: blur(8px) drop-shadow(0 -10px 30px rgba(100, 120, 255, 0.6));
+  }
+  50% {
+    filter: blur(2px) drop-shadow(0 5px 35px rgba(100, 120, 255, 0.5));
   }
   100% {
-    transform: translateY(0); /* Ensure it ends at exact position */
+    transform: translateY(0) scale(1);
     opacity: 1;
+    filter: blur(0) drop-shadow(0 10px 30px rgba(100, 120, 255, 0.2));
   }
 }
 
 /* Animation khi scroll down - bài mới từ dưới lên - TikTok style */
 .post-item.slide-down {
-  animation: slideDownAnimation 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; /* Tăng từ 0.4s lên 0.6s, easing mượt hơn */
+  animation: slideDownAnimation 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  filter: drop-shadow(0 15px 35px rgba(100, 120, 255, 0.4));
 }
 
 @keyframes slideDownAnimation {
   0% {
-    transform: translateY(100%);
+    transform: translateY(100%) scale(0.9);
     opacity: 0;
+    filter: blur(8px) drop-shadow(0 10px 30px rgba(100, 120, 255, 0.6));
+  }
+  50% {
+    filter: blur(2px) drop-shadow(0 5px 35px rgba(100, 120, 255, 0.5));
   }
   100% {
-    transform: translateY(0); /* Ensure it ends at exact position */
+    transform: translateY(0) scale(1);
     opacity: 1;
+    filter: blur(0) drop-shadow(0 10px 30px rgba(100, 120, 255, 0.2));
   }
 }
 
