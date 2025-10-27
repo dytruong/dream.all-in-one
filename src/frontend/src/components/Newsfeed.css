@@ -350,7 +350,7 @@
   flex-direction: column;
   gap: 24px;
   position: relative;
-  justify-content: center; /* Center content vertically */
+  justify-content: flex-start; /* Thay đổi từ center sang flex-start - căn từ trên xuống như Word */
   height: 100%; /* Full height */
   z-index: 2; /* Ensure content is above any ghost elements */
   /* CRITICAL: Use isolation to create new stacking context and prevent bleed-through */
@@ -430,7 +430,7 @@
 /* Right Sidebar - TikTok Style */
 .right-sidebar {
   position: absolute;
-  right: 16px; /* Dịch vào trong từ 12px thành 16px */
+  right: 24px; /* Tăng từ 16px lên 24px - di chuyển vào trong 8px */
   bottom: 80px;
   display: flex;
   flex-direction: column;

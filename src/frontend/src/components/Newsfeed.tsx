@@ -308,6 +308,20 @@ const Newsfeed: React.FC = () => {
     return 'Just now';
   };
 
+  const handleLike = () => {
+    setPosts(prevPosts => 
+      prevPosts.map((post, index) => 
+        index === currentPostIndex 
+          ? { 
+              ...post, 
+              liked: !post.liked,
+              likes: post.liked ? post.likes - 1 : post.likes + 1
+            }
+          : post
+      )
+    );
+  };
+
   const highlightText = (text: string, highlightWords?: string[]): React.ReactNode => {
     const parts: React.ReactNode[] = [];
     let currentText = text;
@@ -390,10 +404,9 @@ const Newsfeed: React.FC = () => {
           {currentPost && currentPost.question && (
             <div style={{ 
               position: 'absolute',
-              top: '50%',
+              top: 'calc(50% - 260px)', // Điều chỉnh vị trí câu hỏi
               left: '20px',
-              right: '50px', // Giảm từ 70px xuống 50px - mở rộng text thêm 20px
-              transform: 'translateY(calc(-50% - 200px))', // Đặt phía trên box
+              right: '50px',
               zIndex: 30,
             }}>
               <div className="post-question">
@@ -450,16 +463,17 @@ const Newsfeed: React.FC = () => {
               >
                 {/* Horizontal scroll container with preview effect */}
                 <div style={{ 
-                  position: 'relative', 
-                  width: '100%', 
-                  height: '100%',
+                  position: 'absolute',
+                  top: 'calc(50% - 160px)', // Bắt đầu ngay dưới câu hỏi (câu hỏi ở -260px + chiều cao ~100px)
+                  left: '20px',
+                  right: '70px',
+                  bottom: '100px', // Để lại chỗ cho pagination
                   display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: '20px',
-                  paddingRight: '70px', // Giảm từ 100px xuống 70px - mở rộng text thêm 30px
+                  flexDirection: 'column',
+                  justifyContent: 'flex-start',
+                  overflow: 'hidden',
                 }}>
-                  <div style={{ position: 'relative', width: '100%', overflow: 'hidden' }}>
+                  <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
                     {/* Previous page preview */}
                     {currentPageIndex > 0 && (
                       <motion.div
@@ -579,7 +593,7 @@ const Newsfeed: React.FC = () => {
 
                   <div className="sidebar-actions">
                     <div className="sidebar-action-item">
-                      <button className={`sidebar-action-btn ${currentPost.liked ? 'liked' : ''}`}>
+                      <button className={`sidebar-action-btn ${currentPost.liked ? 'liked' : ''}`} onClick={handleLike}>
                         <span className="sidebar-action-icon">{currentPost.liked ? '❤️' : '🤍'}</span>
                       </button>
                       <span className="sidebar-action-count">{formatNumber(currentPost.likes)}</span>
