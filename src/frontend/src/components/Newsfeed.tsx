@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence, PanInfo, useMotionValue, useTransform, animate } from 'framer-motion';
 import './Newsfeed.css';
 
 interface User {
@@ -26,11 +27,150 @@ const Newsfeed: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [currentPostIndex, setCurrentPostIndex] = useState(0);
+  const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
-  const [scrollDirection, setScrollDirection] = useState<'up' | 'down' | null>(null);
-  const [dragOffset, setDragOffset] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragProgress, setDragProgress] = useState(0); // 0 to 1, indicates drag strength
+  const [direction, setDirection] = useState<'left' | 'right' | null>(null);
+  const [verticalDirection, setVerticalDirection] = useState<'up' | 'down' | null>(null);
+  const [dragDirection, setDragDirection] = useState<'horizontal' | 'vertical' | null>(null);
+
+  // Motion values for drag feedback
+  const dragX = useMotionValue(0);
+  const dragY = useMotionValue(0);
+  
+  // Transform for preview layers - always calculate, even when not dragging
+  const prevPageTransform = useTransform(dragX, (x) => -window.innerWidth + x);
+  const nextPageTransform = useTransform(dragX, (x) => window.innerWidth + x);
+
+  // Maximum characters per page
+  const MAX_CHARS_PER_PAGE = 420;
+
+  // Split text into pages based on character limit
+  const splitTextIntoPages = (text: string): string[] => {
+    const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+    const pages: string[] = [];
+    let currentPage = '';
+
+    for (const sentence of sentences) {
+      const trimmedSentence = sentence.trim();
+
+      if (currentPage.length + trimmedSentence.length > MAX_CHARS_PER_PAGE && currentPage.length > 0) {
+        pages.push(currentPage.trim());
+        currentPage = trimmedSentence + ' ';
+      } else {
+        currentPage += trimmedSentence + ' ';
+      }
+    }
+
+    if (currentPage.trim().length > 0) {
+      pages.push(currentPage.trim());
+    }
+
+    return pages.length > 0 ? pages : [text];
+  };
+
+  // Get current post's pages
+  const getCurrentPostPages = (): string[] => {
+    if (posts.length === 0) return [];
+    return splitTextIntoPages(posts[currentPostIndex].text);
+  };
+
+  // Navigate to next/prev page
+  const handleNextPage = () => {
+    const pages = getCurrentPostPages();
+    if (currentPageIndex < pages.length - 1) {
+      setDirection('left');
+      setCurrentPageIndex(currentPageIndex + 1);
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (currentPageIndex > 0) {
+      setDirection('right');
+      setCurrentPageIndex(currentPageIndex - 1);
+    }
+  };
+
+  // Navigate to next/prev post
+  const handleNextPost = () => {
+    if (currentPostIndex < posts.length - 1) {
+      setVerticalDirection('up');
+      setCurrentPostIndex(currentPostIndex + 1);
+      setCurrentPageIndex(0); // Reset to first page of new post
+    }
+  };
+
+  const handlePrevPost = () => {
+    if (currentPostIndex > 0) {
+      setVerticalDirection('down');
+      setCurrentPostIndex(currentPostIndex - 1);
+      setCurrentPageIndex(0); // Reset to first page of new post
+    }
+  };
+
+  // Get pagination dots
+  const getPaginationDots = (): number[] => {
+    const pages = getCurrentPostPages();
+    const totalPages = pages.length;
+
+    if (totalPages <= 5) {
+      return Array.from({ length: totalPages }, (_, i) => i);
+    }
+
+    const current = currentPageIndex;
+
+    if (current <= 2) {
+      return [0, 1, 2, 3, 4];
+    } else if (current >= totalPages - 3) {
+      return [totalPages - 5, totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1];
+    } else {
+      return [current - 2, current - 1, current, current + 1, current + 2];
+    }
+  };
+
+  // Framer Motion variants for page transitions (horizontal)
+  const pageVariants = {
+    enter: (direction: string) => ({
+      x: direction === 'left' ? '100%' : '-100%',
+      opacity: 1,
+      scale: 1,
+    }),
+    center: {
+      x: 0,
+      opacity: 1,
+      scale: 1,
+    },
+    exit: (direction: string) => ({
+      x: direction === 'left' ? '-100%' : '100%',
+      opacity: 1,
+      scale: 1,
+    }),
+  };
+
+  // Framer Motion variants for post transitions (vertical)
+  const postVariants = {
+    enter: (direction: string) => ({
+      y: direction === 'up' ? '100%' : '-100%',
+      opacity: 1,
+      scale: 1,
+    }),
+    center: {
+      y: 0,
+      opacity: 1,
+      scale: 1,
+    },
+    exit: (direction: string) => ({
+      y: direction === 'up' ? '-100%' : '100%',
+      opacity: 1,
+      scale: 1,
+    }),
+  };
+
+  const pageTransition = {
+    type: 'spring' as const,
+    stiffness: 500,
+    damping: 35,
+    mass: 0.3,
+  };
 
   useEffect(() => {
     // Get user data from localStorage
@@ -45,13 +185,13 @@ const Newsfeed: React.FC = () => {
       setTheme(savedTheme);
     }
 
-    // Initialize with sample posts (text-focused, Threads-style)
+    // Initialize with sample posts
     const samplePosts: Post[] = [
       {
         id: '1',
         user: 'John Smith',
         userAvatar: 'JS',
-        text: 'Just finished reading an *incredible* book about **philosophy** and the meaning of life. It really changed my perspective on how we approach daily challenges. Highly recommend! 📚✨',
+        text: 'Just finished reading an *incredible* book about **philosophy** and the meaning of life. It really changed my perspective on how we approach daily challenges. The author argues that true happiness comes not from achieving our goals, but from the journey itself. We spend so much time focusing on the destination that we forget to appreciate the present moment. Every step, every struggle, every small victory is part of what makes life meaningful. **Highly recommend** to anyone seeking deeper understanding! 📚✨ #philosophy #mindfulness #bookrecommendation',
         highlightedWords: [],
         likes: 1234,
         comments: 89,
@@ -63,7 +203,7 @@ const Newsfeed: React.FC = () => {
         id: '2',
         user: 'Mary Johnson',
         userAvatar: 'MJ',
-        text: 'Coding is not just about writing code, it\'s about **solving problems** and *creating solutions* that make people\'s lives better. Every line of code is an opportunity to make a difference. 💻🚀 #coding #developer',
+        text: 'Coding is not just about writing code, it\'s about **solving problems** and *creating solutions* that make people\'s lives better. Every line of code is an opportunity to make a difference. After 10 years in this industry, I\'ve learned that the best developers are not those who know every syntax or framework, but those who can **empathize with users** and understand the real problems they face. Technology is just a tool - what matters is how we use it to build something meaningful. Whether you\'re building a small app or a large system, always remember: **you\'re building for people, not machines**. Keep that human connection at the heart of everything you create. 💻🚀 #coding #developer #softwareengineering #tech',
         highlightedWords: [],
         likes: 2567,
         comments: 156,
@@ -75,7 +215,7 @@ const Newsfeed: React.FC = () => {
         id: '3',
         user: 'David Wilson',
         userAvatar: 'DW',
-        text: '**Success** is not final, *failure* is not fatal: it is the **courage to continue** that counts. Keep pushing forward even when things get tough. Your breakthrough might be just around the corner! 💪🎯',
+        text: '**Success** is not final, *failure* is not fatal: it is the **courage to continue** that counts. Keep pushing forward even when things get tough. Your breakthrough might be just around the corner! I\'ve failed more times than I can count - failed job interviews, failed projects, failed relationships. But each failure taught me something valuable. The key is not to avoid failure, but to *learn from it* and **keep moving forward**. When you fall down, you have two choices: stay down or get back up stronger. I choose to get back up every single time. Remember, every successful person you admire has failed countless times - the difference is they didn\'t give up. **Don\'t give up on your dreams**. 💪🎯 #motivation #nevergiveup #success',
         highlightedWords: [],
         likes: 3421,
         comments: 234,
@@ -87,12 +227,36 @@ const Newsfeed: React.FC = () => {
         id: '4',
         user: 'Sarah Lee',
         userAvatar: 'SL',
-        text: 'The **best time** to plant a tree was 20 years ago. The *second best time* is **now**. Don\'t wait for the perfect moment, take the moment and make it perfect. Start today! 🌱✨',
+        text: 'The **best time** to plant a tree was 20 years ago. The *second best time* is **now**. Don\'t wait for the perfect moment, take the moment and make it perfect. Start today! I used to be the queen of procrastination - always waiting for the "right time" to start my business, learn that new skill, or pursue my passion. But guess what? The right time never came. Until I realized that there is no perfect moment. Life is messy, chaotic, and unpredictable. If you wait for everything to be perfect, you\'ll be waiting forever. So I stopped waiting and started doing. And you know what happened? Things weren\'t perfect, but they were *real*. And that real progress, no matter how small, beats perfect planning any day. **Take action today**, even if it\'s just one small step. That small step will lead to another, and another, and before you know it, you\'ve traveled miles. 🌱✨ #justdoit #takeaction #motivation #growth',
         highlightedWords: [],
         likes: 5678,
         comments: 345,
         shares: 234,
         timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+        liked: false
+      },
+      {
+        id: '5',
+        user: 'Alex Chen',
+        userAvatar: 'AC',
+        text: 'Mental health is just as important as physical health, yet we often neglect it. In our fast-paced world, we\'re constantly bombarded with notifications, deadlines, and expectations. We push ourselves to the limit, thinking that\'s what success looks like. But **true success** includes taking care of your mental wellbeing. I learned this the hard way after experiencing burnout last year. I was working 80-hour weeks, barely sleeping, always stressed. I thought I was being productive, but I was actually destroying myself. It took hitting rock bottom for me to realize that *rest is not laziness* - it\'s necessary for sustainable success. Now I prioritize my mental health: I meditate daily, I take breaks, I say no to things that drain me, and I surround myself with positive people. The result? I\'m more creative, more productive, and infinitely happier. **Take care of your mind** - it\'s the only one you\'ve got. 🧠💚 #mentalhealth #selfcare #wellness #burnout #mindfulness',
+        highlightedWords: [],
+        likes: 4521,
+        comments: 287,
+        shares: 156,
+        timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+        liked: false
+      },
+      {
+        id: '6',
+        user: 'Emma Rodriguez',
+        userAvatar: 'ER',
+        text: 'Climate change is not a distant threat - it\'s happening right now, and we all have a role to play in fighting it. Every small action counts. I know it can feel overwhelming, like "what difference can one person make?" But imagine if everyone thought that way - nothing would ever change. Instead, imagine if everyone made just *one small change*: using reusable bags, reducing meat consumption, cycling instead of driving, or supporting sustainable businesses. Those individual actions multiply. I\'ve been making conscious choices for the past year: **zero waste lifestyle**, plant-based diet, buying secondhand, and supporting eco-friendly companies. Has it been perfect? No. Has it been easy? Not always. But is it worth it? Absolutely. We don\'t need a handful of people doing zero waste perfectly - we need millions of people doing it *imperfectly*. Start where you are, use what you have, do what you can. **The planet needs all of us**. 🌍♻️ #climatechange #sustainability #zerowaste #ecofriendly #savetheplanet',
+        highlightedWords: [],
+        likes: 6234,
+        comments: 412,
+        shares: 289,
+        timestamp: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000),
         liked: false
       }
     ];
@@ -100,198 +264,10 @@ const Newsfeed: React.FC = () => {
     setPosts(samplePosts);
   }, []);
 
-  // Add mouse wheel scroll handler
-  useEffect(() => {
-    let scrollTimeout: NodeJS.Timeout;
-    
-    const handleWheel = (e: Event) => {
-      const wheelEvent = e as WheelEvent;
-      wheelEvent.preventDefault();
-      
-      // Clear existing timeout
-      clearTimeout(scrollTimeout);
-      
-      // Set a timeout to prevent too rapid scrolling
-      scrollTimeout = setTimeout(() => {
-        if (wheelEvent.deltaY > 0) {
-          // Scrolling down
-          handleScroll('down');
-        } else if (wheelEvent.deltaY < 0) {
-          // Scrolling up
-          handleScroll('up');
-        }
-      }, 100);
-    };
-
-    const container = document.querySelector('.newsfeed-container');
-    if (container) {
-      container.addEventListener('wheel', handleWheel, { passive: false });
-    }
-
-    return () => {
-      if (container) {
-        container.removeEventListener('wheel', handleWheel);
-      }
-      clearTimeout(scrollTimeout);
-    };
-  }, [currentPostIndex, posts.length]);
-
-  // TikTok-style touch handler with real-time visual feedback
-  useEffect(() => {
-    let touchStartY = 0;
-    let touchStartTime = 0;
-    let currentTouchY = 0;
-    let animationFrameId: number | null = null;
-    
-    const handleTouchStart = (e: Event) => {
-      const touchEvent = e as TouchEvent;
-      touchStartY = touchEvent.touches[0].clientY;
-      currentTouchY = touchStartY;
-      touchStartTime = Date.now();
-      setIsDragging(true);
-    };
-    
-    const handleTouchMove = (e: Event) => {
-      const touchEvent = e as TouchEvent;
-      currentTouchY = touchEvent.touches[0].clientY;
-      const deltaY = currentTouchY - touchStartY;
-      
-      // CRITICAL: Always prevent default to stop pull-to-refresh
-      // Especially when scrolling down (deltaY > 0) on any post
-      if (deltaY > 0) {
-        e.preventDefault();
-      }
-      
-      // Also prevent when at boundaries
-      if ((currentPostIndex === 0 && deltaY > 0) || 
-          (currentPostIndex === posts.length - 1 && deltaY < 0)) {
-        e.preventDefault();
-      }
-      
-      // Apply rubber band effect at boundaries
-      let adjustedDelta = deltaY;
-      const rubberBandStrength = 0.4;
-      
-      if ((currentPostIndex === 0 && deltaY > 0) || 
-          (currentPostIndex === posts.length - 1 && deltaY < 0)) {
-        adjustedDelta = deltaY * rubberBandStrength;
-      }
-      
-      // Update drag offset for real-time feedback
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
-      }
-      
-      animationFrameId = requestAnimationFrame(() => {
-        setDragOffset(adjustedDelta);
-        setDragProgress(Math.min(Math.abs(adjustedDelta) / window.innerHeight, 1));
-        
-        // Add visual indicators for drag direction
-        const mobileFeed = document.querySelector('.mobile-feed');
-        if (mobileFeed) {
-          mobileFeed.classList.remove('dragging-up', 'dragging-down');
-          if (deltaY < -20) {
-            mobileFeed.classList.add('dragging-down');
-          } else if (deltaY > 20) {
-            mobileFeed.classList.add('dragging-up');
-          }
-        }
-      });
-    };
-    
-    const handleTouchEnd = () => {
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
-      }
-      
-      const deltaY = currentTouchY - touchStartY;
-      const touchDuration = Date.now() - touchStartTime;
-      const velocity = Math.abs(deltaY) / touchDuration;
-      
-      // Calculate threshold based on velocity and distance
-      const minSwipeDistance = 50;
-      const velocityThreshold = 0.3;
-      
-      const shouldScroll = Math.abs(deltaY) > minSwipeDistance || velocity > velocityThreshold;
-      
-      if (shouldScroll) {
-        if (deltaY < 0 && currentPostIndex < posts.length - 1) {
-          handleScroll('down');
-        } else if (deltaY > 0 && currentPostIndex > 0) {
-          handleScroll('up');
-        }
-      }
-      
-      // Reset drag state with smooth snap-back animation
-      setIsDragging(false);
-      setDragOffset(0);
-      setDragProgress(0);
-      
-      // Remove drag indicators
-      const mobileFeed = document.querySelector('.mobile-feed');
-      if (mobileFeed) {
-        mobileFeed.classList.remove('dragging-up', 'dragging-down');
-      }
-    };
-    
-    const handleTouchCancel = () => {
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
-      }
-      setIsDragging(false);
-      setDragOffset(0);
-      setDragProgress(0);
-      
-      // Remove drag indicators
-      const mobileFeed = document.querySelector('.mobile-feed');
-      if (mobileFeed) {
-        mobileFeed.classList.remove('dragging-up', 'dragging-down');
-      }
-    };
-
-    const container = document.querySelector('.mobile-feed');
-    if (container) {
-      // Use passive: false to allow preventDefault()
-      container.addEventListener('touchstart', handleTouchStart, { passive: false });
-      container.addEventListener('touchmove', handleTouchMove, { passive: false });
-      container.addEventListener('touchend', handleTouchEnd, { passive: true });
-      container.addEventListener('touchcancel', handleTouchCancel, { passive: true });
-    }
-
-    return () => {
-      if (container) {
-        container.removeEventListener('touchstart', handleTouchStart);
-        container.removeEventListener('touchmove', handleTouchMove);
-        container.removeEventListener('touchend', handleTouchEnd);
-        container.removeEventListener('touchcancel', handleTouchCancel);
-      }
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
-      }
-    };
-  }, [currentPostIndex, posts.length]);
-
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     window.location.href = '/login';
-  };
-
-  const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
-  };
-
-  const handleLike = (postId: string) => {
-    setPosts(posts.map(post => {
-      if (post.id === postId) {
-        return {
-          ...post,
-          liked: !post.liked,
-          likes: post.liked ? post.likes - 1 : post.likes + 1
-        };
-      }
-      return post;
-    }));
   };
 
   const toggleTheme = () => {
@@ -326,18 +302,15 @@ const Newsfeed: React.FC = () => {
   };
 
   const highlightText = (text: string, highlightWords?: string[]): React.ReactNode => {
-    // Parse text for bold (**text**), italic (*text*), and hashtags
     const parts: React.ReactNode[] = [];
     let currentText = text;
     let key = 0;
 
-    // Regular expression to match bold, italic, and hashtags
     const regex = /(\*\*[^*]+\*\*|\*[^*]+\*|#\w+)/g;
     let lastIndex = 0;
     let match;
 
     while ((match = regex.exec(currentText)) !== null) {
-      // Add normal text before the match
       if (match.index > lastIndex) {
         parts.push(
           <span key={key++}>{currentText.substring(lastIndex, match.index)}</span>
@@ -345,23 +318,20 @@ const Newsfeed: React.FC = () => {
       }
 
       const matchedText = match[0];
-      
+
       if (matchedText.startsWith('**') && matchedText.endsWith('**')) {
-        // Bold text
         parts.push(
           <strong key={key++} className="bold-text">
             {matchedText.slice(2, -2)}
           </strong>
         );
       } else if (matchedText.startsWith('*') && matchedText.endsWith('*')) {
-        // Italic text
         parts.push(
           <em key={key++} className="italic-text">
             {matchedText.slice(1, -1)}
           </em>
         );
       } else if (matchedText.startsWith('#')) {
-        // Hashtag
         parts.push(
           <span key={key++} className="hashtag">
             {matchedText}
@@ -372,7 +342,6 @@ const Newsfeed: React.FC = () => {
       lastIndex = regex.lastIndex;
     }
 
-    // Add remaining text
     if (lastIndex < currentText.length) {
       parts.push(
         <span key={key++}>{currentText.substring(lastIndex)}</span>
@@ -382,42 +351,15 @@ const Newsfeed: React.FC = () => {
     return <>{parts}</>;
   };
 
-  const handleScroll = (direction: 'up' | 'down') => {
-    if (direction === 'down' && currentPostIndex < posts.length - 1) {
-      setScrollDirection('down');
-      setCurrentPostIndex(currentPostIndex + 1);
-    } else if (direction === 'up' && currentPostIndex > 0) {
-      setScrollDirection('up');
-      setCurrentPostIndex(currentPostIndex - 1);
-    }
-  };
-
-  // Reset scroll direction after animation completes
-  useEffect(() => {
-    if (scrollDirection) {
-      const timer = setTimeout(() => {
-        setScrollDirection(null);
-        
-        // Force reset any lingering transforms on mobile
-        const postItem = document.querySelector('.post-item');
-        if (postItem instanceof HTMLElement) {
-          postItem.style.transform = 'translateY(0)';
-        }
-      }, 400); // Reduced from 600ms to 400ms to match the faster 0.35s animation
-
-      return () => clearTimeout(timer);
-    }
-  }, [scrollDirection, currentPostIndex]);
-
   if (!user) {
     return <div className="loading">Loading...</div>;
   }
 
   const currentPost = posts[currentPostIndex];
+  const currentPostPages = getCurrentPostPages();
 
   return (
     <div className={`newsfeed-container ${theme}`}>
-      {/* Header */}
       <div className="newsfeed-header">
         <div className="header-content">
           <h1 className="logo">Dream Social</h1>
@@ -435,88 +377,241 @@ const Newsfeed: React.FC = () => {
         </div>
       </div>
 
-      {/* Mobile-sized Feed Container */}
       <div className="feed-wrapper">
-        <div className="mobile-feed">
-          {currentPost && (
-            <div 
-              className={`post-item ${scrollDirection ? `slide-${scrollDirection}` : ''} ${isDragging ? 'dragging' : ''}`} 
-              style={{ transform: `translateY(${dragOffset}px) scale(${1 - dragProgress * 0.1})` }}
-            >
-              {/* Post Content - Text Focused */}
-              <div className="post-content-center">
-                {/* Post Text - Main Focus */}
-                <div className="post-text">
-                  <p>{highlightText(currentPost.text, currentPost.highlightedWords)}</p>
-                </div>
-              </div>
+        <div className="mobile-feed" style={{ position: 'relative', overflow: 'hidden' }}>
+          <AnimatePresence initial={false} custom={verticalDirection} mode="popLayout">
+            {currentPost && (
+              <motion.div
+                key={`post-${currentPostIndex}`}
+                className="post-item page-block active"
+                custom={verticalDirection}
+                variants={postVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={pageTransition}
+                drag="y"
+                dragConstraints={{ top: 0, bottom: 0 }}
+                dragElastic={0.6}
+                dragDirectionLock={true}
+                dragMomentum={false}
+                onDragStart={(e, info) => {
+                  if (dragDirection !== 'horizontal') {
+                    setDragDirection('vertical');
+                  }
+                }}
+                onDrag={(e, info) => {
+                  if (dragDirection === 'vertical') {
+                    dragY.set(info.offset.y);
+                  }
+                }}
+                onDragEnd={(e, info) => {
+                  if (dragDirection === 'vertical') {
+                    setDragDirection(null);
+                    dragY.set(0);
+                    
+                    const screenHeight = window.innerHeight;
+                    const draggedEnough = Math.abs(info.offset.y) > screenHeight * 0.15;
+                    const hasVelocity = Math.abs(info.velocity.y) > 250;
 
-              {/* Right Side Actions - TikTok Style */}
-              <div className="right-sidebar">
-                {/* User Info */}
-                <div className="sidebar-user-info">
-                  <div className="user-avatar-sidebar">
-                    {currentPost.userAvatar}
-                  </div>
-                  <div className="user-name-sidebar">
-                    {currentPost.user}
-                  </div>
-                  <div className="user-time-sidebar">
-                    {formatTime(currentPost.timestamp)}
-                  </div>
-                </div>
-
-                {/* Action Buttons with Counts */}
-                <div className="sidebar-actions">
-                  <div className="sidebar-action-item">
-                    <button 
-                      className={`sidebar-action-btn ${currentPost.liked ? 'liked' : ''}`}
-                      onClick={() => handleLike(currentPost.id)}
+                    if ((draggedEnough || hasVelocity) && info.offset.y < 0 && currentPostIndex < posts.length - 1) {
+                      handleNextPost();
+                    } else if ((draggedEnough || hasVelocity) && info.offset.y > 0 && currentPostIndex > 0) {
+                      handlePrevPost();
+                    }
+                  }
+                }}
+                style={{ zIndex: 10 }}
+              >
+                {/* Horizontal scroll container with preview effect */}
+                <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
+                  {/* Previous page preview */}
+                  {currentPageIndex > 0 && (
+                    <motion.div
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        x: prevPageTransform,
+                        zIndex: 2,
+                        opacity: 0.5,
+                        pointerEvents: 'none',
+                      }}
+                      className="post-content-center"
                     >
-                      <span className="sidebar-action-icon">{currentPost.liked ? '❤️' : '🤍'}</span>
-                    </button>
-                    <span className="sidebar-action-count">{formatNumber(currentPost.likes)}</span>
+                      <div className="post-text">
+                        <p>{highlightText(currentPostPages[currentPageIndex - 1], currentPost.highlightedWords)}</p>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* Current page */}
+                  <AnimatePresence initial={false} custom={direction} mode="popLayout">
+                    <motion.div
+                      key={`page-${currentPageIndex}`}
+                      className="post-content-center"
+                      custom={direction}
+                      variants={pageVariants}
+                      initial="enter"
+                      animate="center"
+                      exit="exit"
+                      transition={{
+                        type: 'spring',
+                        stiffness: 500,
+                        damping: 35,
+                        mass: 0.3,
+                      }}
+                      drag="x"
+                      dragConstraints={{ left: 0, right: 0 }}
+                      dragElastic={0.6}
+                      dragDirectionLock={true}
+                      dragMomentum={false}
+                      onDragStart={(e, info) => {
+                        setDragDirection('horizontal');
+                      }}
+                      onDrag={(e, info) => {
+                        dragX.set(info.offset.x);
+                      }}
+                      onDragEnd={(e, info) => {
+                        const pages = getCurrentPostPages();
+                        const screenWidth = window.innerWidth;
+                        const draggedEnough = Math.abs(info.offset.x) > screenWidth * 0.2;
+                        const hasVelocity = Math.abs(info.velocity.x) > 250;
+
+                        if ((draggedEnough || hasVelocity) && info.offset.x < 0 && currentPageIndex < pages.length - 1) {
+                          handleNextPage();
+                          dragX.set(0);
+                          setDragDirection(null);
+                        } else if ((draggedEnough || hasVelocity) && info.offset.x > 0 && currentPageIndex > 0) {
+                          handlePrevPage();
+                          dragX.set(0);
+                          setDragDirection(null);
+                        } else {
+                          // Snap back if not dragged enough
+                          setDragDirection(null);
+                          dragX.set(0);
+                        }
+                      }}
+                      style={{ 
+                        backgroundColor: theme === 'dark' ? '#000' : '#fff',
+                        zIndex: 5,
+                        position: 'relative',
+                      }}
+                    >
+                      <div className="post-text">
+                        <p>{highlightText(currentPostPages[currentPageIndex], currentPost.highlightedWords)}</p>
+                      </div>
+                    </motion.div>
+                  </AnimatePresence>
+
+                  {/* Next page preview */}
+                  {currentPageIndex < currentPostPages.length - 1 && (
+                    <motion.div
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        x: nextPageTransform,
+                        zIndex: 2,
+                        opacity: 0.5,
+                        pointerEvents: 'none',
+                      }}
+                      className="post-content-center"
+                    >
+                      <div className="post-text">
+                        <p>{highlightText(currentPostPages[currentPageIndex + 1], currentPost.highlightedWords)}</p>
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+
+                <div className="right-sidebar" style={{ position: 'absolute', zIndex: 20 }}>
+                  <div className="sidebar-user-info">
+                    <div className="user-avatar-sidebar">
+                      {currentPost.userAvatar}
+                    </div>
+                    <div className="user-name-sidebar">
+                      {currentPost.user}
+                    </div>
+                    <div className="user-time-sidebar">
+                      {formatTime(currentPost.timestamp)}
+                    </div>
                   </div>
 
-                  <div className="sidebar-action-item">
-                    <button className="sidebar-action-btn">
-                      <span className="sidebar-action-icon">💬</span>
-                    </button>
-                    <span className="sidebar-action-count">{formatNumber(currentPost.comments)}</span>
-                  </div>
+                  <div className="sidebar-actions">
+                    <div className="sidebar-action-item">
+                      <button className={`sidebar-action-btn ${currentPost.liked ? 'liked' : ''}`}>
+                        <span className="sidebar-action-icon">{currentPost.liked ? '❤️' : '🤍'}</span>
+                      </button>
+                      <span className="sidebar-action-count">{formatNumber(currentPost.likes)}</span>
+                    </div>
 
-                  <div className="sidebar-action-item">
-                    <button className="sidebar-action-btn">
-                      <span className="sidebar-action-icon">📤</span>
-                    </button>
-                    <span className="sidebar-action-count">{formatNumber(currentPost.shares)}</span>
+                    <div className="sidebar-action-item">
+                      <button className="sidebar-action-btn">
+                        <span className="sidebar-action-icon">💬</span>
+                      </button>
+                      <span className="sidebar-action-count">{formatNumber(currentPost.comments)}</span>
+                    </div>
+
+                    <div className="sidebar-action-item">
+                      <button className="sidebar-action-btn">
+                        <span className="sidebar-action-icon">📤</span>
+                      </button>
+                      <span className="sidebar-action-count">{formatNumber(currentPost.shares)}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Post Counter */}
-              <div className="post-counter">
-                {currentPostIndex + 1} / {posts.length}
-              </div>
-            </div>
-          )}
+                {currentPostPages.length > 1 && (
+                  <div className="pagination-controls" style={{ position: 'absolute', zIndex: 20 }}>
+                    <button
+                      className={`pagination-arrow left ${currentPageIndex === 0 ? 'disabled' : ''}`}
+                      onClick={handlePrevPage}
+                      disabled={currentPageIndex === 0}
+                    >
+                      &lt;
+                    </button>
+
+                    <div className="pagination-dots">
+                      {getPaginationDots().map((index) => (
+                        <div
+                          key={index}
+                          className={`pagination-dot ${index === currentPageIndex ? 'active' : ''}`}
+                          onClick={() => setCurrentPageIndex(index)}
+                        />
+                      ))}
+                    </div>
+
+                    <button
+                      className={`pagination-arrow right ${currentPageIndex >= currentPostPages.length - 1 ? 'disabled' : ''}`}
+                      onClick={handleNextPage}
+                      disabled={currentPageIndex >= currentPostPages.length - 1}
+                    >
+                      &gt;
+                    </button>
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
-        {/* Navigation Arrows - Moved outside mobile-feed to avoid animation interference */}
         <div className="navigation-arrows">
           <button 
             className={`nav-arrow up ${currentPostIndex === 0 ? 'disabled' : ''}`}
-            onClick={() => handleScroll('up')}
+            onClick={handlePrevPost}
             disabled={currentPostIndex === 0}
-            title={currentPostIndex === 0 ? 'Already at the first post' : 'Previous post'}
           >
             ↑
           </button>
           <button 
             className={`nav-arrow down ${currentPostIndex >= posts.length - 1 ? 'disabled' : ''}`}
-            onClick={() => handleScroll('down')}
+            onClick={handleNextPost}
             disabled={currentPostIndex >= posts.length - 1}
-            title={currentPostIndex >= posts.length - 1 ? 'Already at the last post' : 'Next post'}
           >
             ↓
           </button>

@@ -138,10 +138,10 @@
   height: calc(100vh - 60px);
   position: relative;
   overflow: hidden; /* Keep content within bounds */
-  /* Add gradient overlay to show scroll direction */
+  /* CRITICAL: Isolate rendering context to prevent text bleeding */
+  isolation: isolate;
 }
 
-.mobile-feed::before,
 .mobile-feed::after {
   content: '';
   position: absolute;
@@ -152,25 +152,6 @@
   z-index: 5;
   opacity: 0;
   transition: opacity 0.3s ease;
-}
-
-.mobile-feed::before {
-  top: 0;
-  background: linear-gradient(to bottom, rgba(100, 100, 255, 0.15) 0%, transparent 100%);
-}
-
-.mobile-feed::after {
-  bottom: 0;
-  background: linear-gradient(to top, rgba(100, 100, 255, 0.15) 0%, transparent 100%);
-}
-
-/* Show gradient when dragging in that direction */
-.mobile-feed.dragging-up::before {
-  opacity: 1;
-}
-
-.mobile-feed.dragging-down::after {
-  opacity: 1;
 }
 
 /* Post Item */
@@ -187,6 +168,128 @@
   will-change: transform, opacity, filter;
   /* Add shadow for depth perception */
   filter: drop-shadow(0 10px 30px rgba(100, 120, 255, 0));
+  z-index: 2; /* Current post on top */
+}
+
+/* Page blocks - each page is a separate entity */
+.post-item.page-block {
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden; /* CRITICAL: Ensure completely hidden - prevents ghost text */
+  display: none; /* Double protection - don't render at all */
+}
+
+.post-item.page-block.active {
+  opacity: 1;
+  pointer-events: auto;
+  visibility: visible;
+  display: flex;
+  z-index: 10;
+}
+
+.post-item.page-block.hidden {
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden; /* CRITICAL: Ensure completely hidden */
+  display: none; /* Don't render hidden pages at all */
+  z-index: 1;
+}
+
+/* Page slide animations - slide entire block */
+.post-item.page-slide-out-left {
+  animation: pageBlockSlideOutLeft 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  z-index: 9 !important;
+}
+
+.post-item.page-slide-out-right {
+  animation: pageBlockSlideOutRight 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  z-index: 9 !important;
+}
+
+.post-item.page-slide-in-from-right {
+  animation: pageBlockSlideInFromRight 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  z-index: 10 !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+.post-item.page-slide-in-from-left {
+  animation: pageBlockSlideInFromLeft 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  z-index: 10 !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* Slide entire block out to the left */
+@keyframes pageBlockSlideOutLeft {
+  0% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+}
+
+/* Slide entire block in from right */
+@keyframes pageBlockSlideInFromRight {
+  0% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Slide entire block out to the right */
+@keyframes pageBlockSlideOutRight {
+  0% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+/* Slide entire block in from left */
+@keyframes pageBlockSlideInFromLeft {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Preview layers - appear behind current post */
+.post-preview {
+  z-index: 1;
+  opacity: 0.6;
+  pointer-events: none; /* Don't interfere with current post interactions */
+}
+
+/* Preview positioning based on direction */
+.preview-next-post {
+  transform: translateY(30px) scale(0.95);
+}
+
+.preview-prev-post {
+  transform: translateY(-30px) scale(0.95);
+}
+
+.preview-next-page {
+  transform: translateX(30px) scale(0.98);
+}
+
+.preview-prev-page {
+  transform: translateX(-30px) scale(0.98);
 }
 
 /* Remove transition when dragging for immediate feedback */
@@ -249,6 +352,27 @@
   position: relative;
   justify-content: center; /* Center content vertically */
   height: 100%; /* Full height */
+  z-index: 2; /* Ensure content is above any ghost elements */
+  /* CRITICAL: Use isolation to create new stacking context and prevent bleed-through */
+  isolation: isolate;
+  /* CRITICAL: Force GPU acceleration for smoother transitions */
+  will-change: transform, opacity;
+  transform: translate3d(0, 0, 0); /* Force 3D rendering context */
+  backface-visibility: hidden; /* Prevent flickering during transform */
+  -webkit-font-smoothing: antialiased; /* Improve text rendering */
+  /* CRITICAL: CSS contain property to isolate rendering - prevents reflow */
+  contain: layout style paint;
+  /* CRITICAL: Disable pointer events during transitions to prevent flash */
+  pointer-events: auto;
+}
+
+/* Add solid background to content to prevent ghost text bleeding through */
+.dark .post-content-center {
+  background: #000; /* Solid black background in dark mode */
+}
+
+.light .post-content-center {
+  background: #fff; /* Solid white background in light mode */
 }
 
 /* Right Sidebar - TikTok Style */
@@ -362,7 +486,7 @@
 }
 
 .light .sidebar-action-btn:hover {
-  background: rgba(228, 230, 234, 0.95);
+  background: #e4e6ea;
 }
 
 .sidebar-action-btn.liked {
@@ -407,6 +531,10 @@
   padding: 20px 0;
   max-width: 100%;
   width: 100%; /* Full width */
+  animation: none;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 .post-text p {
@@ -684,23 +812,215 @@
   display: none; /* Ẩn số đếm bài post */
 }
 
-/* Loading */
-.loading {
+/* Pagination Controls - Container for arrows and dots in one row */
+.pagination-controls {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
-  justify-content: center;
   align-items: center;
-  height: 100vh;
-  font-size: 18px;
+  gap: 16px;
+  z-index: 20;
+  padding: 12px 20px;
+  border-radius: 30px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
-.dark .loading {
-  background: #000;
+.dark .pagination-controls {
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.light .pagination-controls {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* Pagination Dots - TikTok Style */
+.pagination-dots {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.pagination-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.dark .pagination-dot {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.light .pagination-dot {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.pagination-dot:hover {
+  transform: scale(1.3);
+}
+
+.dark .pagination-dot:hover {
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.light .pagination-dot:hover {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+/* Active dot - just highlighted, still circular */
+.pagination-dot.active {
+  transform: scale(1.4);
+}
+
+.dark .pagination-dot.active {
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+}
+
+.light .pagination-dot.active {
+  background: rgba(0, 0, 0, 1);
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Pagination Arrows - Beautiful chevron-style buttons */
+.pagination-arrow {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 0;
+  position: relative;
+}
+
+.dark .pagination-arrow {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%);
   color: #fff;
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
 }
 
-.light .loading {
-  background: #fff;
-  color: #050505;
+.light .pagination-arrow {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(240, 240, 240, 0.8) 100%);
+  color: #333;
+  border: 1.5px solid rgba(0, 0, 0, 0.1);
+}
+
+.pagination-arrow:not(.disabled):hover {
+  transform: scale(1.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.dark .pagination-arrow:not(.disabled):hover {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.2) 100%);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.light .pagination-arrow:not(.disabled):hover {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(250, 250, 250, 0.95) 100%);
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+.pagination-arrow:not(.disabled):active {
+  transform: scale(1.05);
+}
+
+/* Disabled state - blurred when at page boundaries */
+.pagination-arrow.disabled {
+  opacity: 0.25;
+  filter: blur(2px);
+  cursor: not-allowed;
+  pointer-events: none;
+  transform: scale(0.9);
+}
+
+.dark .pagination-arrow.disabled {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+.light .pagination-arrow.disabled {
+  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.03);
+}
+
+/* Page slide animations */
+.post-item.page-slide-left {
+  animation: pageSlideOutLeft 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.post-item.page-slide-right {
+  animation: pageSlideOutRight 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Slide out to the left (when going to next page) */
+@keyframes pageSlideOutLeft {
+  0% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+}
+
+/* Slide in from the right (new page entering from right) */
+@keyframes pageSlideInFromRight {
+  0% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Slide out to the right (when going to previous page) */
+@keyframes pageSlideOutRight {
+  0% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+/* Slide in from the left (new page entering from left) */
+@keyframes pageSlideInFromLeft {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Apply animations to post content to create page-turning effect */
+.post-item.page-slide-left .post-content-center {
+  animation: pageSlideInFromRight 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.post-item.page-slide-right .post-content-center {
+  animation: pageSlideInFromLeft 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 /* Responsive Design */
