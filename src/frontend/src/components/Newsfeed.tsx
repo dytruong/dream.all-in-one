@@ -15,6 +15,7 @@ interface Post {
   user: string;
   userAvatar: string;
   text: string;
+  question?: string; // Câu hỏi hiển thị ở trên cùng
   highlightedWords?: string[];
   likes: number;
   comments: number;
@@ -191,6 +192,7 @@ const Newsfeed: React.FC = () => {
         id: '1',
         user: 'John Smith',
         userAvatar: 'JS',
+        question: 'What book changed your perspective on life?',
         text: 'Just finished reading an *incredible* book about **philosophy** and the meaning of life. It really changed my perspective on how we approach daily challenges. The author argues that true happiness comes not from achieving our goals, but from the journey itself. We spend so much time focusing on the destination that we forget to appreciate the present moment. Every step, every struggle, every small victory is part of what makes life meaningful. **Highly recommend** to anyone seeking deeper understanding! 📚✨ #philosophy #mindfulness #bookrecommendation',
         highlightedWords: [],
         likes: 1234,
@@ -203,6 +205,7 @@ const Newsfeed: React.FC = () => {
         id: '2',
         user: 'Mary Johnson',
         userAvatar: 'MJ',
+        question: 'What does coding mean to you?',
         text: 'Coding is not just about writing code, it\'s about **solving problems** and *creating solutions* that make people\'s lives better. Every line of code is an opportunity to make a difference. After 10 years in this industry, I\'ve learned that the best developers are not those who know every syntax or framework, but those who can **empathize with users** and understand the real problems they face. Technology is just a tool - what matters is how we use it to build something meaningful. Whether you\'re building a small app or a large system, always remember: **you\'re building for people, not machines**. Keep that human connection at the heart of everything you create. 💻🚀 #coding #developer #softwareengineering #tech',
         highlightedWords: [],
         likes: 2567,
@@ -215,6 +218,7 @@ const Newsfeed: React.FC = () => {
         id: '3',
         user: 'David Wilson',
         userAvatar: 'DW',
+        question: 'How do you handle failure?',
         text: '**Success** is not final, *failure* is not fatal: it is the **courage to continue** that counts. Keep pushing forward even when things get tough. Your breakthrough might be just around the corner! I\'ve failed more times than I can count - failed job interviews, failed projects, failed relationships. But each failure taught me something valuable. The key is not to avoid failure, but to *learn from it* and **keep moving forward**. When you fall down, you have two choices: stay down or get back up stronger. I choose to get back up every single time. Remember, every successful person you admire has failed countless times - the difference is they didn\'t give up. **Don\'t give up on your dreams**. 💪🎯 #motivation #nevergiveup #success',
         highlightedWords: [],
         likes: 3421,
@@ -227,6 +231,7 @@ const Newsfeed: React.FC = () => {
         id: '4',
         user: 'Sarah Lee',
         userAvatar: 'SL',
+        question: 'When is the right time to start?',
         text: 'The **best time** to plant a tree was 20 years ago. The *second best time* is **now**. Don\'t wait for the perfect moment, take the moment and make it perfect. Start today! I used to be the queen of procrastination - always waiting for the "right time" to start my business, learn that new skill, or pursue my passion. But guess what? The right time never came. Until I realized that there is no perfect moment. Life is messy, chaotic, and unpredictable. If you wait for everything to be perfect, you\'ll be waiting forever. So I stopped waiting and started doing. And you know what happened? Things weren\'t perfect, but they were *real*. And that real progress, no matter how small, beats perfect planning any day. **Take action today**, even if it\'s just one small step. That small step will lead to another, and another, and before you know it, you\'ve traveled miles. 🌱✨ #justdoit #takeaction #motivation #growth',
         highlightedWords: [],
         likes: 5678,
@@ -239,6 +244,7 @@ const Newsfeed: React.FC = () => {
         id: '5',
         user: 'Alex Chen',
         userAvatar: 'AC',
+        question: 'How do you take care of your mental health?',
         text: 'Mental health is just as important as physical health, yet we often neglect it. In our fast-paced world, we\'re constantly bombarded with notifications, deadlines, and expectations. We push ourselves to the limit, thinking that\'s what success looks like. But **true success** includes taking care of your mental wellbeing. I learned this the hard way after experiencing burnout last year. I was working 80-hour weeks, barely sleeping, always stressed. I thought I was being productive, but I was actually destroying myself. It took hitting rock bottom for me to realize that *rest is not laziness* - it\'s necessary for sustainable success. Now I prioritize my mental health: I meditate daily, I take breaks, I say no to things that drain me, and I surround myself with positive people. The result? I\'m more creative, more productive, and infinitely happier. **Take care of your mind** - it\'s the only one you\'ve got. 🧠💚 #mentalhealth #selfcare #wellness #burnout #mindfulness',
         highlightedWords: [],
         likes: 4521,
@@ -251,6 +257,7 @@ const Newsfeed: React.FC = () => {
         id: '6',
         user: 'Emma Rodriguez',
         userAvatar: 'ER',
+        question: 'What can we do about climate change?',
         text: 'Climate change is not a distant threat - it\'s happening right now, and we all have a role to play in fighting it. Every small action counts. I know it can feel overwhelming, like "what difference can one person make?" But imagine if everyone thought that way - nothing would ever change. Instead, imagine if everyone made just *one small change*: using reusable bags, reducing meat consumption, cycling instead of driving, or supporting sustainable businesses. Those individual actions multiply. I\'ve been making conscious choices for the past year: **zero waste lifestyle**, plant-based diet, buying secondhand, and supporting eco-friendly companies. Has it been perfect? No. Has it been easy? Not always. But is it worth it? Absolutely. We don\'t need a handful of people doing zero waste perfectly - we need millions of people doing it *imperfectly*. Start where you are, use what you have, do what you can. **The planet needs all of us**. 🌍♻️ #climatechange #sustainability #zerowaste #ecofriendly #savetheplanet',
         highlightedWords: [],
         likes: 6234,
@@ -379,6 +386,24 @@ const Newsfeed: React.FC = () => {
 
       <div className="feed-wrapper">
         <div className="mobile-feed" style={{ position: 'relative', overflow: 'hidden' }}>
+          {/* Question section - Cố định vị trí, không bị ảnh hưởng bởi animation */}
+          {currentPost && currentPost.question && (
+            <div style={{ 
+              position: 'absolute',
+              top: '50%',
+              left: '20px',
+              right: '100px', // Space for sidebar
+              transform: 'translateY(calc(-50% - 200px))', // Đặt phía trên box
+              zIndex: 30,
+            }}>
+              <div className="post-question">
+                <div className="question-content">
+                  <h3 className="question-text">{currentPost.question}</h3>
+                </div>
+              </div>
+            </div>
+          )}
+
           <AnimatePresence initial={false} custom={verticalDirection} mode="popLayout">
             {currentPost && (
               <motion.div
@@ -424,109 +449,119 @@ const Newsfeed: React.FC = () => {
                 style={{ zIndex: 10 }}
               >
                 {/* Horizontal scroll container with preview effect */}
-                <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
-                  {/* Previous page preview */}
-                  {currentPageIndex > 0 && (
-                    <motion.div
-                      style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        width: '100%',
-                        height: '100%',
-                        x: prevPageTransform,
-                        zIndex: 2,
-                        opacity: 0.5,
-                        pointerEvents: 'none',
-                      }}
-                      className="post-content-center"
-                    >
-                      <div className="post-text">
-                        <p>{highlightText(currentPostPages[currentPageIndex - 1], currentPost.highlightedWords)}</p>
-                      </div>
-                    </motion.div>
-                  )}
+                <div style={{ 
+                  position: 'relative', 
+                  width: '100%', 
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '20px',
+                  paddingRight: '100px', // Space for sidebar
+                }}>
+                  <div style={{ position: 'relative', width: '100%', overflow: 'hidden' }}>
+                    {/* Previous page preview */}
+                    {currentPageIndex > 0 && (
+                      <motion.div
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          x: prevPageTransform,
+                          zIndex: 2,
+                          opacity: 0.5,
+                          pointerEvents: 'none',
+                        }}
+                        className="post-content-center"
+                      >
+                        <div className="post-text">
+                          <p>{highlightText(currentPostPages[currentPageIndex - 1], currentPost.highlightedWords)}</p>
+                        </div>
+                      </motion.div>
+                    )}
 
-                  {/* Current page */}
-                  <AnimatePresence initial={false} custom={direction} mode="popLayout">
-                    <motion.div
-                      key={`page-${currentPageIndex}`}
-                      className="post-content-center"
-                      custom={direction}
-                      variants={pageVariants}
-                      initial="enter"
-                      animate="center"
-                      exit="exit"
-                      transition={{
-                        type: 'spring',
-                        stiffness: 500,
-                        damping: 35,
-                        mass: 0.3,
-                      }}
-                      drag="x"
-                      dragConstraints={{ left: 0, right: 0 }}
-                      dragElastic={0.6}
-                      dragDirectionLock={true}
-                      dragMomentum={false}
-                      onDragStart={(e, info) => {
-                        setDragDirection('horizontal');
-                      }}
-                      onDrag={(e, info) => {
-                        dragX.set(info.offset.x);
-                      }}
-                      onDragEnd={(e, info) => {
-                        const pages = getCurrentPostPages();
-                        const screenWidth = window.innerWidth;
-                        const draggedEnough = Math.abs(info.offset.x) > screenWidth * 0.2;
-                        const hasVelocity = Math.abs(info.velocity.x) > 250;
+                    {/* Current page */}
+                    <AnimatePresence initial={false} custom={direction} mode="popLayout">
+                      <motion.div
+                        key={`page-${currentPageIndex}`}
+                        className="post-content-center"
+                        custom={direction}
+                        variants={pageVariants}
+                        initial="enter"
+                        animate="center"
+                        exit="exit"
+                        transition={{
+                          type: 'spring',
+                          stiffness: 500,
+                          damping: 35,
+                          mass: 0.3,
+                        }}
+                        drag="x"
+                        dragConstraints={{ left: 0, right: 0 }}
+                        dragElastic={0.6}
+                        dragDirectionLock={true}
+                        dragMomentum={false}
+                        onDragStart={(e, info) => {
+                          setDragDirection('horizontal');
+                        }}
+                        onDrag={(e, info) => {
+                          dragX.set(info.offset.x);
+                        }}
+                        onDragEnd={(e, info) => {
+                          const pages = getCurrentPostPages();
+                          const screenWidth = window.innerWidth;
+                          const draggedEnough = Math.abs(info.offset.x) > screenWidth * 0.2;
+                          const hasVelocity = Math.abs(info.velocity.x) > 250;
 
-                        if ((draggedEnough || hasVelocity) && info.offset.x < 0 && currentPageIndex < pages.length - 1) {
-                          handleNextPage();
-                          dragX.set(0);
-                          setDragDirection(null);
-                        } else if ((draggedEnough || hasVelocity) && info.offset.x > 0 && currentPageIndex > 0) {
-                          handlePrevPage();
-                          dragX.set(0);
-                          setDragDirection(null);
-                        } else {
-                          // Snap back if not dragged enough
-                          setDragDirection(null);
-                          dragX.set(0);
-                        }
-                      }}
-                      style={{ 
-                        backgroundColor: theme === 'dark' ? '#000' : '#fff',
-                        zIndex: 5,
-                        position: 'relative',
-                      }}
-                    >
-                      <div className="post-text">
-                        <p>{highlightText(currentPostPages[currentPageIndex], currentPost.highlightedWords)}</p>
-                      </div>
-                    </motion.div>
-                  </AnimatePresence>
+                          if ((draggedEnough || hasVelocity) && info.offset.x < 0 && currentPageIndex < pages.length - 1) {
+                            handleNextPage();
+                            dragX.set(0);
+                            setDragDirection(null);
+                          } else if ((draggedEnough || hasVelocity) && info.offset.x > 0 && currentPageIndex > 0) {
+                            handlePrevPage();
+                            dragX.set(0);
+                            setDragDirection(null);
+                          } else {
+                            // Snap back if not dragged enough
+                            setDragDirection(null);
+                            dragX.set(0);
+                          }
+                        }}
+                        style={{ 
+                          backgroundColor: theme === 'dark' ? '#000' : '#fff',
+                          zIndex: 5,
+                          position: 'relative',
+                          padding: '24px',
+                        }}
+                      >
+                        <div className="post-text">
+                          <p>{highlightText(currentPostPages[currentPageIndex], currentPost.highlightedWords)}</p>
+                        </div>
+                      </motion.div>
+                    </AnimatePresence>
 
-                  {/* Next page preview */}
-                  {currentPageIndex < currentPostPages.length - 1 && (
-                    <motion.div
-                      style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        width: '100%',
-                        height: '100%',
-                        x: nextPageTransform,
-                        zIndex: 2,
-                        opacity: 0.5,
-                        pointerEvents: 'none',
-                      }}
-                      className="post-content-center"
-                    >
-                      <div className="post-text">
-                        <p>{highlightText(currentPostPages[currentPageIndex + 1], currentPost.highlightedWords)}</p>
-                      </div>
-                    </motion.div>
-                  )}
+                    {/* Next page preview */}
+                    {currentPageIndex < currentPostPages.length - 1 && (
+                      <motion.div
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          x: nextPageTransform,
+                          zIndex: 2,
+                          opacity: 0.5,
+                          pointerEvents: 'none',
+                        }}
+                        className="post-content-center"
+                      >
+                        <div className="post-text">
+                          <p>{highlightText(currentPostPages[currentPageIndex + 1], currentPost.highlightedWords)}</p>
+                        </div>
+                      </motion.div>
+                    )}
+                  </div>
                 </div>
 
                 <div className="right-sidebar" style={{ position: 'absolute', zIndex: 20 }}>

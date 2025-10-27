@@ -375,6 +375,56 @@
   background: #fff; /* Solid white background in light mode */
 }
 
+/* Question Section - Liền kề box container của câu trả lời */
+.post-question {
+  padding: 0 20px;
+  margin: 0;
+  position: relative;
+  z-index: 30;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  border-radius: 0;
+}
+
+.dark .post-question {
+  background: transparent;
+  border-bottom: none;
+}
+
+.light .post-question {
+  background: transparent;
+  border-bottom: none;
+}
+
+.question-content {
+  display: block;
+  padding: 0;
+  margin: 0;
+}
+
+.question-icon {
+  display: none;
+}
+
+.question-text {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+.dark .question-text {
+  color: #fff;
+}
+
+.light .question-text {
+  color: #000;
+}
+
 /* Right Sidebar - TikTok Style */
 .right-sidebar {
   position: absolute;
@@ -525,10 +575,11 @@
   display: none; /* Hide old user info section */
 }
 
-/* Post Text - MAIN FOCUS - Full Width TikTok Style */
+/* Post Text - MAIN FOCUS - Gần câu hỏi hơn */
 .post-text {
   text-align: left;
-  padding: 20px 0;
+  padding: 0;
+  padding-top: 0; /* Loại bỏ padding top để sát câu hỏi */
   max-width: 100%;
   width: 100%; /* Full width */
   animation: none;
