@@ -392,7 +392,7 @@ const Newsfeed: React.FC = () => {
               position: 'absolute',
               top: '50%',
               left: '20px',
-              right: '100px', // Space for sidebar
+              right: '50px', // Giảm từ 70px xuống 50px - mở rộng text thêm 20px
               transform: 'translateY(calc(-50% - 200px))', // Đặt phía trên box
               zIndex: 30,
             }}>
@@ -457,7 +457,7 @@ const Newsfeed: React.FC = () => {
                   alignItems: 'center',
                   justifyContent: 'center',
                   padding: '20px',
-                  paddingRight: '100px', // Space for sidebar
+                  paddingRight: '70px', // Giảm từ 100px xuống 70px - mở rộng text thêm 30px
                 }}>
                   <div style={{ position: 'relative', width: '100%', overflow: 'hidden' }}>
                     {/* Previous page preview */}

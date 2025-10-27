@@ -344,8 +344,8 @@
 .post-content-center {
   width: 100%;
   padding: 32px 20px; /* Giảm padding để text có thể mở rộng hơn */
-  padding-right: 100px; /* Space for sidebar */
-  padding-left: 20px; /* Bắt đầu từ edge trái */
+  padding-right: 50px; /* Giảm từ 70px xuống 50px - mở rộng text thêm 20px */
+  padding-left: 45px; /* Tăng từ 20px lên 45px để cân bằng với padding-right */
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -378,6 +378,8 @@
 /* Question Section - Liền kề box container của câu trả lời */
 .post-question {
   padding: 0 20px;
+  padding-right: 0; /* Loại bỏ padding-right để câu hỏi cũng mở rộng theo post-content-center */
+  padding-left: 25px; /* Thêm padding-left để align với post-content-center */
   margin: 0;
   position: relative;
   z-index: 30;
@@ -428,7 +430,7 @@
 /* Right Sidebar - TikTok Style */
 .right-sidebar {
   position: absolute;
-  right: 12px;
+  right: 16px; /* Dịch vào trong từ 12px thành 16px */
   bottom: 80px;
   display: flex;
   flex-direction: column;
@@ -1082,12 +1084,12 @@
   }
   
   .post-content-center {
-    padding-right: 100px; /* Keep space for right sidebar */
+    padding-right: 85px; /* Tăng từ 100px xuống 85px cho tablet */
   }
   
   /* Thu nhỏ sidebar trên tablet */
   .right-sidebar {
-    right: 8px;
+    right: 12px; /* Dịch vào trong từ 8px thành 12px */
     gap: 16px;
   }
   
@@ -1178,14 +1180,14 @@
 
   .post-content-center {
     padding: 20px 16px; /* Giảm padding để có nhiều không gian hơn */
-    padding-right: 70px;
+    padding-right: 50px; /* Giảm từ 65px xuống 50px - mở rộng text hơn */
     height: 100%;
     overflow: hidden;
   }
   
   /* Thu nhỏ hơn nữa sidebar trên mobile */
   .right-sidebar {
-    right: 6px;
+    right: 8px; /* Giữ nguyên vị trí */
     bottom: 60px;
     gap: 12px;
   }
@@ -1258,12 +1260,22 @@
   }
   
   .post-content-center {
-    padding: 20px 16px;
-    padding-right: 65px;
+    padding: 20px 12px; /* Giảm padding trái từ 16px xuống 12px */
+    padding-right: 42px; /* Giảm từ 48px xuống 42px - mở rộng text thêm 6px ra phải */
+  }
+  
+  .post-question {
+    padding: 0 12px; /* Điều chỉnh để align với post-content-center */
+    padding-right: 0; /* Giữ nguyên để câu hỏi mở rộng tối đa */
+  }
+  
+  .question-text {
+    font-size: 17px; /* Tăng nhẹ từ 18px xuống 17px cho iPhone SE */
+    padding-right: 0; /* Đảm bảo không có padding thừa */
   }
   
   .right-sidebar {
-    right: 4px;
+    right: 6px; /* Giữ nguyên vị trí để text có thể gần hơn */
     gap: 10px;
   }
   
